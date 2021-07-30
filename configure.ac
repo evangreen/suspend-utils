@@ -145,41 +145,6 @@ CONFIG_FEATURES=""
 if test "${ARCH}" = "x86"; then
 	AC_DEFINE([CONFIG_ARCH_X86], [1], [Define if x86 arch])
 
-	PKG_CHECK_MODULES(
-		[LIBPCI],
-		[libpci >= 2.2.4],
-		,
-		[
-			if test -z "${LIBPCI_LIBS}"; then
-				AC_CHECK_LIB(
-					[pci],
-					[pci_init],
-					[LIBPCI_LIBS="-lpci"],
-					[
-					#force rescan
-					unset ac_cv_lib_pci_pci_init
-					AC_CHECK_LIB(
-						[pci],
-						[pci_init],
-						[LIBPCI_LIBS="-lpci -lz"],
-						[AC_MSG_ERROR([Required pciutils >= 2.2.4 not found])],
-						[-lz]
-					)]
-				)
-			fi
-		]
-	)
-
-	if test -z "${LIBX86_LIBS}"; then
-		AC_ARG_VAR([LIBX86_CFLAGS], [C compiler flags for libx86])
-		AC_ARG_VAR([LIBX86_LIBS], [linker flags for libx86])
-		AC_CHECK_LIB(
-			[x86],
-			[LRMI_common_init],
-			[LIBX86_LIBS="-lx86"],
-			[AC_MSG_ERROR([Required libx86 was not found])]
-		)
-	fi
 elif test "${ARCH}" = "ppc"; then
 	AC_DEFINE([CONFIG_ARCH_PPC], [1], [Define if ppc arch])
 elif test "${ARCH}" = "s390"; then

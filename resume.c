@@ -468,9 +468,15 @@ int main(int argc, char *argv[])
 		return error;
 	}
 
+#if 0
 	open_printk();
 	orig_loglevel = get_kernel_console_loglevel();
 	set_kernel_console_loglevel(suspend_loglevel);
+#else
+	open_kmsg();
+#endif
+
+	printk("Starting resume\n");
 
 	/*
 	* 30 seconds grace period to allow resume device
@@ -538,6 +544,7 @@ int main(int argc, char *argv[])
 				"cannot continue resuming.\n");
 	}
 
+	printk("Userspace frozen\n");
 	if (reset_signature(resume_dev, &swsusp_header))
 		fprintf(stderr, "%s: Swap signature has not been restored.\n"
 			"\tRun mkswap on the resume partition/file.\n",
@@ -558,6 +565,7 @@ int main(int argc, char *argv[])
 			use_platform_suspend = 0;
 		}
 	}
+	printk("Restoring\n");
 	atomic_restore(dev);
 	/* We only get here if the atomic restore fails.  Clean up. */
 	unfreeze(dev);
@@ -567,12 +575,16 @@ Close_splash:
 Close:
 	close(dev);
 Free:
+#if 0
 	if (error)
 	    set_kernel_console_loglevel(max_loglevel);
 	else if (orig_loglevel >= 0)
 	    set_kernel_console_loglevel(orig_loglevel);
 
 	close_printk();
+#else
+	close_kmsg();
+#endif
 
 	free_memalloc();
 

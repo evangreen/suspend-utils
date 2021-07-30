@@ -17,6 +17,7 @@
  *                                  by Stefan Seyfried <seife@suse.de>
  */
 
+#if 0
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -267,10 +268,12 @@ void map_radeon_cntl_mem(void)
     radeon_cntl_mem = map_device_memory(base,0x2000);
 }
 #endif
+#endif
 
 #ifndef S2RAM
 int main(int argc,char *argv[]) 
 {
+#if 0
     map_radeon_cntl_mem();
     if (radeon_cntl_mem == NULL) {
         fprintf(stderr, "Fatal error: radeon_cntl_mem == NULL.\n");
@@ -282,6 +285,7 @@ int main(int argc,char *argv[])
             return 0;
         }
     };
+#endif
     return 1;
 }
 #endif

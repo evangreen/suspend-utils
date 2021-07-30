@@ -575,7 +575,9 @@ int read_or_verify(int dev, int fd, struct image_header_info *header,
 	static unsigned char orig_checksum[16], checksum[16];
 	static char csum_buf[48];
 	int error = 0, test_mode = (verify || test);
+	struct timeval starttime;
 
+	timer_start(&starttime);
 	error = read_page(fd, header, start);
 	if (error)
 		return error;
@@ -633,6 +635,8 @@ int read_or_verify(int dev, int fd, struct image_header_info *header,
 		struct timeval begin, end;
 		double delta, mb;
 
+		timer_print(&starttime, "Resume prepared in");
+		timer_start(&starttime);
 		gettimeofday(&begin, NULL);
 		error = load_image(&handle, dev, header->pages, test_mode);
 		if (!error && verify_checksum) {
@@ -651,11 +655,15 @@ int read_or_verify(int dev, int fd, struct image_header_info *header,
 		free_swap_reader(&handle);
 		if (error)
 			goto Exit_encrypt;
+		timer_print(&starttime, "Read image in");
 		gettimeofday(&end, NULL);
 
 		timersub(&end, &begin, &end);
 		delta = end.tv_usec / 1000000.0 + end.tv_sec;
 		mb = (header->pages * (page_size / 1024.0)) / 1024.0;
+		printk("Image size was %lu kb, %lu pages, %0.1lf MB/s\n",
+		       (unsigned long)(mb * 1024), (unsigned long)(mb * 1024 / 4),
+		       mb / header->writeout_time);
 
 		printf("wrote %0.1lf MB in %0.1lf seconds (%0.1lf MB/s)\n",
 			mb, header->writeout_time, mb / header->writeout_time);

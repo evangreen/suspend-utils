@@ -8,15 +8,18 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdarg.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
 
 
 static FILE *printk_file;
+static FILE *kmsg_file;
 static int proc_mounted = 0;
 
-inline void open_printk(void)
+void open_printk(void)
 {
 	struct stat stat_buf;
 	char *procname = "/proc/sys/kernel/printk";
@@ -32,7 +35,7 @@ inline void open_printk(void)
         printk_file = fopen(procname, "r+");
 }
 
-inline int get_kernel_console_loglevel(void)
+int get_kernel_console_loglevel(void)
 {
         int level = -1;
 
@@ -43,7 +46,7 @@ inline int get_kernel_console_loglevel(void)
         return level;
 }
 
-inline void set_kernel_console_loglevel(int level)
+void set_kernel_console_loglevel(int level)
 {
         if (printk_file) {
                 rewind(printk_file);
@@ -53,7 +56,7 @@ inline void set_kernel_console_loglevel(int level)
 
 }
 
-inline void close_printk(void)
+void close_printk(void)
 {
         if (printk_file)
                 fclose(printk_file);
@@ -62,3 +65,38 @@ inline void close_printk(void)
 		umount("/proc");
 }
 
+void open_kmsg(void) {
+        kmsg_file = fopen("/dev/kmsg", "w");
+        if (kmsg_file) {
+                setvbuf(kmsg_file, NULL, _IOLBF, 0);
+        }
+}
+
+void printk(const char *fmt, ...) {
+        va_list args;
+
+        if (kmsg_file) {
+                fprintf(kmsg_file, "<5>hibernate: ");
+                va_start(args, fmt);
+                vfprintf(kmsg_file, fmt, args);
+                va_end(args);
+        }
+}
+
+void close_kmsg(void) {
+        if (kmsg_file) {
+                fclose(kmsg_file);
+                kmsg_file = NULL;
+        }
+}
+
+void timer_start(struct timeval *start) {
+        gettimeofday(start, NULL);
+}
+
+void timer_print(struct timeval *start, const char *string) {
+        struct timeval end;
+        gettimeofday(&end, NULL);
+        timersub(&end, start, start);
+        printk("%s %g\n", string, start->tv_usec / 1000000.0 + start->tv_sec);
+}

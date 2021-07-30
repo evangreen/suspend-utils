@@ -15,7 +15,7 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#include <pci/pci.h>
+//#include <pci/pci.h>
 
 #include "vbetool/vbetool.h"
 #include "vt.h"
@@ -28,8 +28,8 @@ void dmi_scan(void);
 
 static void *vbe_buffer;
 static unsigned char vga_pci_state[256];
-static struct pci_dev vga_dev;
-static struct pci_access *pacc;
+//static struct pci_dev vga_dev;
+//static struct pci_access *pacc;
 static int vbe_mode = -1, dmi_scanned;
 
 /* return codes for s2ram_is_supported */
@@ -40,6 +40,7 @@ static int vbe_mode = -1, dmi_scanned;
 
 void identify_machine(void)
 {
+#if 0
 	if (!dmi_scanned) {
 		dmi_scan();
 		dmi_scanned = 1;
@@ -51,8 +52,10 @@ void identify_machine(void)
 	       "    sys_version  = \"%s\"\n"
 	       "    bios_version = \"%s\"\n",
 	       sys_vendor, sys_product, sys_version, bios_version);
+#endif
 }
 
+#if 0
 static int set_acpi_video_mode(int mode)
 {
 	unsigned long acpi_video_flags;
@@ -153,10 +156,13 @@ static void resume_fbcon(void)
 	fbcon_state(0);
 }
 
+#endif
+
 int s2ram_check(int id)
 {
 	int ret = S2RAM_OK;
 
+#if 0
 	if (id < 0) {
 		ret = S2RAM_UNKNOWN;
 	} else {
@@ -169,12 +175,14 @@ int s2ram_check(int id)
 			       "You may try to find better options "
 			       "than previously reported.\n\n");
 	}
+#endif
 
 	return ret;
 }
 
 int machine_known(void)
 {
+#if 0
 	int i = machine_match();
 	if (i < 0) {
 		printf("Machine unknown\n");
@@ -206,8 +214,12 @@ int machine_known(void)
 	 */
 	identify_machine();
 	return (flags & UNSURE);
+#else
+	return 1;
+#endif
 }
 
+#if 0
 static int find_vga(void)
 {
 	struct pci_dev *dev;
@@ -240,12 +252,14 @@ static void restore_vga_pci(void)
 {
 	pci_write_block(&vga_dev, 0, vga_pci_state, 256);
 }
+#endif
 
 /* warning: we have to be on a text console when calling this */
 int s2ram_hacks(void)
 {
 	int ret = 0;
 
+#if 0
 	ret = set_acpi_video_mode(flags & (S3_BIOS | S3_MODE));
 
 	if (ret)
@@ -285,12 +299,14 @@ int s2ram_hacks(void)
 			"this as a bug.\n");
 	else
 		suspend_fbcon();
+#endif
 
 	return 0;
 }
 
 int s2ram_is_supported(void)
 {
+#if 0
 	int ret = 0, id;
 
 	if (!force) {
@@ -306,6 +322,9 @@ int s2ram_is_supported(void)
 	}
 
 	return ret;
+#else
+	return 0;
+#endif
 }
 
 /* Actually enter the suspend. May be ran on frozen system. */
@@ -316,6 +335,7 @@ int s2ram_do(void)
 
 void s2ram_resume(void)
 {
+#if 0
 	if (flags & PCI_SAVE) {
 		printf("restoring PCI config of device %02x:%02x.%d\n",
 			vga_dev.bus, vga_dev.dev, vga_dev.func);
@@ -345,6 +365,7 @@ void s2ram_resume(void)
 		printf("Calling radeon_cmd_light(1)\n");
 		radeon_cmd_light(1);
 	}
+#endif
 }
 
 void s2ram_add_flag(int opt, const char *opt_arg)

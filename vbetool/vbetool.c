@@ -8,6 +8,7 @@ This program is released under the terms of the GNU General Public License,
 version 2
 */
 
+#if 0
 #include <pci/pci.h>
 #include <assert.h>
 #include <stdio.h>
@@ -50,10 +51,12 @@ void vbetool_init(void)
 	pacc->numeric_ids = 1;
 	pci_init(pacc);
 }
+#endif
 
 #ifndef S2RAM
 int main(int argc, char *argv[])
 {
+#if 0
 	/* Don't bother checking for privilege if they only want usage() */
 	if (argc < 2)
 		goto usage;
@@ -140,11 +143,13 @@ int main(int argc, char *argv[])
 			argv[0], argv[0]);
 		return 1;
 	}
+#endif
 
 	return 0;
 }
 #endif
 
+#if 0
 int do_vbe_service(unsigned int AX, unsigned int BX, reg_frame * regs)
 {
 	const unsigned interrupt = 0x10;
@@ -570,4 +575,6 @@ int do_get_panel_id(int just_dimensions)
 
   return 0;
 }
+#endif
+
 #endif

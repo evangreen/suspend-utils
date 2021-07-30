@@ -93,7 +93,7 @@ void bootsplash_switch_to(void)
 	}
 }
 
-inline int bootsplash_progress(int p)
+int bootsplash_progress(int p)
 {
 	char buf[MAX_LINE_SIZE];
 

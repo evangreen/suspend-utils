@@ -1417,13 +1417,14 @@ static int write_image(int snapshot_fd, int resume_fd, int test_fd)
 	struct image_header_info *header;
 	loff_t start;
 	loff_t image_size;
-	double real_size;
+	double real_size, mb;
 	unsigned long nr_pages = 0;
 	int error, test_mode = (test_fd >= 0);
-	struct timeval begin;
+	struct timeval begin, starttime;
 
 	printf("%s: System snapshot ready. Preparing to write\n", my_name);
 	/* Allocate a swap page for the additional "userland" header */
+	timer_start(&starttime);
 	start = get_swap_page(snapshot_fd);
 	if (!start)
 		return -ENOSPC;
@@ -1545,7 +1546,9 @@ No_RSA:
 
 Save_image:
 #endif
+	timer_print(&starttime, "Prepared in");
 	gettimeofday(&begin, NULL);
+	timer_start(&starttime);
 
 	error = save_image(&handle, nr_pages);
 	if (!error) {
@@ -1569,11 +1572,18 @@ Save_image:
 		gettimeofday(&end, NULL);
 		timersub(&end, &begin, &end);
 		header->writeout_time = end.tv_usec / 1000000.0 + end.tv_sec;
+		printf("Wrote image in %f seconds\n", header->writeout_time);
 
 		header->resume_pause = resume_pause;
 
 		error = write_page(resume_fd, header, start);
 		fsync(resume_fd);
+		timer_print(&starttime, "Saved image in");
+		mb = (double)image_size / (1024.0 * 1024.0);
+		printk("Image size is %lu kilobytes, %lu pages, %0.1lf MB/s\n",
+		       (unsigned long)image_size / 1024,
+		       (unsigned long)image_size / 4096,
+		       mb / header->writeout_time);
 	}
 
  Free_writer:
@@ -1681,6 +1691,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 	loff_t image_size;
 	int attempts, in_suspend, error = 0;
 	char message[SPLASH_GENERIC_MESSAGE_SIZE];
+	struct timeval start;
 
 	avail_swap = check_free_swap(snapshot_fd);
 	if (avail_swap > pref_image_size)
@@ -1727,7 +1738,9 @@ int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 	printf("%s: %s\n", my_name, message);
 	splash.set_caption(message);
 	attempts = 2;
+	printk("Snapshotting system\n");
 	do {
+		timer_start(&start);
 		if (set_image_size(snapshot_fd, image_size)) {
 			error = errno;
 			break;
@@ -1744,6 +1757,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 			break;
 		}
 
+		timer_print(&start, "Snapshotted system in");
 		error = write_image(snapshot_fd, resume_fd, -1);
 		if (error) {
 			free_swap_pages(snapshot_fd);
@@ -1772,6 +1786,7 @@ int suspend_system(int snapshot_fd, int resume_fd, int test_fd)
 Shutdown:
 #endif
 			close(resume_fd);
+			printk("Powering down");
 			suspend_shutdown(snapshot_fd);
 		}
 	} while (--attempts);
@@ -2503,9 +2518,13 @@ int main(int argc, char *argv[])
                 splash.read_password(password, 1);
 #endif
 
+#if 0
 	open_printk();
 	orig_loglevel = get_kernel_console_loglevel();
 	set_kernel_console_loglevel(suspend_loglevel);
+#else
+	open_kmsg();
+#endif
 
 	open_swappiness();
 	orig_swappiness = get_swappiness();
@@ -2523,10 +2542,14 @@ int main(int argc, char *argv[])
 
 	ret = suspend_system(snapshot_fd, resume_fd, test_fd);
 
+#if 0
 	if (orig_loglevel >= 0)
 		set_kernel_console_loglevel(orig_loglevel);
 
 	close_printk();
+#else
+	close_kmsg();
+#endif
 
 	if(orig_swappiness >= 0)
 		set_swappiness(orig_swappiness);
